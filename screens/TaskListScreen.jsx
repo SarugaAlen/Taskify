@@ -7,13 +7,15 @@ import {
   TouchableOpacity,
   TextInput,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { TaskContext } from '../TaskContext'; 
 
 
 const TaskListScreen = ({ navigation }) => {
-  const { tasks, toggleTaskStatus } = useContext(TaskContext);
+  const { tasks, toggleTaskStatus, deleteTask } = useContext(TaskContext);
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredTasks = tasks.filter(task =>
@@ -25,32 +27,73 @@ const TaskListScreen = ({ navigation }) => {
     return new Date(date).toLocaleDateString(undefined, options);
   };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={[styles.taskItem, item.status === 'completed' && styles.completedTask]}
-      onPress={() => navigation.navigate('TaskDetails', { task: item })}
-    >
-      <View style={styles.taskContent}>
-        <Text style={[styles.taskTitle, item.status === 'completed' && styles.completedTaskText]}>
-          {item.title}
-        </Text>
-        <Text style={styles.dueDate}>
-          Rok: {formatDueDate(item.dueDate)}
-        </Text>
-        <Text style={styles.taskStatus}>
-          Status: {item.status === 'completed' ? 'Končano' : 'V Teku'}
-        </Text>
-      </View>
+  const handleDelete = (task) => {
+    Alert.alert(
+      "Izbriši opravilo",
+      "Ali ste prepričani, da želite izbrisati to opravilo?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Izbriši", 
+          style: "destructive", 
+          onPress: () => {
+            deleteTask(task.id);
+            Alert.alert(
+              "Opravilo izbrisano", 
+              "Vaše opravilo je bilo uspešno izbrisano.",
+              [{ 
+                text: "OK", 
+                onPress: () => {
+                  navigation.navigate('TaskList');
+                } 
+              }] 
+            );
+          } 
+        },
+      ]
+    );
+  };
+
+  const renderItem = ({ item }) => {
+    const renderRightActions = (progress, dragX) => (
       <TouchableOpacity
-        style={[styles.statusButton, item.status === 'completed' ? styles.pendingButton : styles.completeButton]}
-        onPress={() => toggleTaskStatus(item.id)}
+        style={styles.deleteButton}
+        onPress={() => handleDelete(item)}
       >
-        <Text style={styles.statusButtonText}>
-          {item.status === 'completed' ? 'V Teku' : 'Končano'}
-        </Text>
+        <Text style={styles.deleteButtonText}>🗑️</Text>
       </TouchableOpacity>
-    </TouchableOpacity>
-  );
+    );
+  
+    return (
+      <ReanimatedSwipeable renderRightActions={renderRightActions}>
+        <TouchableOpacity
+          style={[styles.taskItem, item.status === 'completed' && styles.completedTask]}
+          onPress={() => navigation.navigate('TaskDetails', { task: item })}
+        >
+          <View style={styles.taskContent}>
+            <Text style={[styles.taskTitle, item.status === 'completed' && styles.completedTaskText]}>
+              {item.title}
+            </Text>
+            <Text style={styles.dueDate}>
+              Rok: {formatDueDate(item.dueDate)}
+            </Text>
+            <Text style={styles.taskStatus}>
+              Status: {item.status === 'completed' ? 'Končano' : 'V Teku'}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.statusButton, item.status === 'completed' ? styles.pendingButton : styles.completeButton]}
+            onPress={() => toggleTaskStatus(item.id)}
+          >
+            <Text style={styles.statusButtonText}>
+              {item.status === 'completed' ? 'V Teku' : 'Končano'}
+            </Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </ReanimatedSwipeable>
+    );
+  };
+  
 
   return (
     <SafeAreaView style={styles.container}>
@@ -206,6 +249,32 @@ const styles = StyleSheet.create({
     fontSize: 28, 
     fontWeight: 'bold',
   },
+  deleteButton: {
+    backgroundColor: '#E74C3C',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    height: '100%',
+    borderRadius: 12,
+    shadowColor: '#000', 
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3, 
+    shadowRadius: 4, 
+    elevation: 3, 
+    marginRight: 10, 
+},
+
+deleteButtonText: {
+    color: 'white', 
+    fontSize: 18, 
+    fontWeight: 'bold',
+    textAlign: 'center', 
+    paddingVertical: 5, 
+    paddingHorizontal: 10,
+}
 });
 
 export default TaskListScreen;

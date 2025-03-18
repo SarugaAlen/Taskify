@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 
 const HomeScreen = ({ navigation }) => {return (
     <View style={styles.container}>
-      <Text style={styles.title}>Todo App</Text>
+      <Text style={styles.title}>Taskify</Text>
       
       <Image 
         source={{ uri: 'https://static-00.iconduck.com/assets.00/todo-icon-512x512-voha1qns.png' }} 

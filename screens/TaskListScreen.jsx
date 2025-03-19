@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: 80,
-    height: '100%',
+    height: '90%',
     borderRadius: 12,
     shadowColor: '#000', 
     shadowOffset: {

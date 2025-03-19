@@ -2,6 +2,9 @@ import React, { createContext, useState } from 'react';
 
 export const TaskContext = createContext();
 
+//SHA1: 35:B1:C1:56:2A:75:1A:08:12:18:08:8C:AB:88:54:67:CA:4A:21:65
+//SHA-256: A7:6C:9F:0C:83:46:9D:AD:A9:13:BA:59:62:84:01:5C:11:A6:7A:BD:A2:65:43:90:87:3A:5A:76:AF:8B:F3:FA
+
 export const TaskProvider = ({ children }) => {
   const [tasks, setTasks] = useState([
     { 
@@ -23,7 +26,7 @@ export const TaskProvider = ({ children }) => {
       status: 'completed' 
     },
     { 
-      id: '3', 
+    id: '3', 
       title: 'Posodobi spletno stran', 
       description: 'Posodobi vsebino spletne strani.', 
       category: 'Tehnologija', 

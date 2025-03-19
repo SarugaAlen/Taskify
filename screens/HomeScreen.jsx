@@ -1,30 +1,48 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import auth from '@react-native-firebase/auth';
 
-const HomeScreen = ({ navigation }) => {return (
+const HomeScreen = ({ navigation }) => {
+  
+  const handleLogout = async () => {
+    try {
+      await auth().signOut(); 
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+  
+  return (
     <View style={styles.container}>
       <Text style={styles.title}>Taskify</Text>
-      
-      <Image 
-        source={{ uri: 'https://static-00.iconduck.com/assets.00/todo-icon-512x512-voha1qns.png' }} 
+
+      <Image
+        source={{ uri: 'https://static-00.iconduck.com/assets.00/todo-icon-512x512-voha1qns.png' }}
         style={styles.logo}
       />
-      
+
       <Text style={styles.subtitle}>Vaša opravila na enem mestu</Text>
-      
+
       <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={styles.button} 
+        <TouchableOpacity
+          style={styles.button}
           onPress={() => navigation.navigate('TaskList')}
         >
           <Text style={styles.buttonText}>Ogled vseh opravil</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.button, styles.addButton]} 
+
+        <TouchableOpacity
+          style={[styles.button, styles.addButton]}
           onPress={() => navigation.navigate('AddTask')}
         >
           <Text style={styles.buttonText}>Dodaj novo opravilo</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.logoutButton]}
+          onPress={handleLogout}
+        >
+          <Text style={styles.buttonText}>Odjava</Text>
         </TouchableOpacity>
       </View>
     </View>

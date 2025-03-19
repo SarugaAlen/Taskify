@@ -1,14 +1,17 @@
-import React from 'react';
+import React, {useState} from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import auth from '@react-native-firebase/auth';
 
 const HomeScreen = ({ navigation }) => {
-  
+  const [loading, setLoading] = useState(true);
+
   const handleLogout = async () => {
     try {
-      await auth().signOut(); 
+      setLoading(true); 
+      await auth().signOut();
     } catch (error) {
       console.error('Error logging out:', error);
+      setLoading(false);
     }
   };
   

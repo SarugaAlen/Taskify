@@ -1,67 +1,178 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
+import firestore from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
 
 export const TaskContext = createContext();
 
-//SHA1: 35:B1:C1:56:2A:75:1A:08:12:18:08:8C:AB:88:54:67:CA:4A:21:65
-//SHA-256: A7:6C:9F:0C:83:46:9D:AD:A9:13:BA:59:62:84:01:5C:11:A6:7A:BD:A2:65:43:90:87:3A:5A:76:AF:8B:F3:FA
-
 export const TaskProvider = ({ children }) => {
-  const [tasks, setTasks] = useState([
-    { 
-      id: '1', 
-      title: 'Dokončaj poročilo', 
-      description: 'Dokončati je treba poročilo za projekt.', 
-      category: 'Delo', 
-      dueDate: new Date(), 
-      reminderDate: new Date(new Date().setDate(new Date().getDate() + 1)),
-      status: 'pending' 
-    },
-    { 
-      id: '2', 
-      title: 'Preberi dokumentacijo', 
-      description: 'Prebrati je treba dokumentacijo projekta.', 
-      category: 'Delo', 
-      dueDate: new Date(), 
-      reminderDate: new Date(new Date().setDate(new Date().getDate() + 2)), 
-      status: 'completed' 
-    },
-    { 
-    id: '3', 
-      title: 'Posodobi spletno stran', 
-      description: 'Posodobi vsebino spletne strani.', 
-      category: 'Tehnologija', 
-      dueDate: new Date(), 
-      reminderDate: new Date(new Date().setDate(new Date().getDate() + 3)), 
-      status: 'pending' 
-    },
-  ]);
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const addTask = (newTask) => {
-    setTasks((prevTasks) => [...prevTasks, newTask]);
+  const getCurrentUserId = () => {
+    const user = auth().currentUser;
+    if (!user) {
+      console.log("No user currently signed in");
+      return null;
+    }
+    console.log("Current user ID:", user.uid);
+    return user.uid;
   };
 
-  const toggleTaskStatus = (id) => {
-    setTasks((prevTasks) =>
-      prevTasks.map(task =>
-        task.id === id
-          ? { ...task, status: task.status === 'completed' ? 'pending' : 'completed' }
-          : task
-      )
-    );
+  const getTasksRef = () => {
+    const userId = getCurrentUserId();
+    return userId ? firestore().collection('users').doc(userId).collection('tasks') : null;
   };
 
-  const deleteTask = (id) => {
-    console.log("Deleting task with id:", id);
-    setTasks((prevTasks) => {
-      const updatedTasks = prevTasks.filter(task => task.id !== id);
-      console.log("Updated tasks:", updatedTasks);
-      return updatedTasks;
+  useEffect(() => {
+    let unsubscribeFirestore = null;
+    
+    const unsubscribeAuth = auth().onAuthStateChanged(user => {
+      if (unsubscribeFirestore) {
+        unsubscribeFirestore();
+        unsubscribeFirestore = null;
+      }
+      
+      if (user) {
+        setTimeout(() => {
+          unsubscribeFirestore = setupFirestoreListener();
+        }, 500);
+      } else {
+        setTasks([]);
+        setLoading(false);
+      }
     });
+  
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeFirestore) {
+        unsubscribeFirestore();
+      }
+    };
+  }, []);
+
+
+  const setupFirestoreListener = () => {
+    const tasksRef = getTasksRef();
+    
+    if (!tasksRef) {
+      setLoading(false);
+      return null;
+    }
+  
+    try {
+      return tasksRef.onSnapshot(querySnapshot => {
+        const tasksList = [];
+        
+        querySnapshot.forEach(doc => {
+          const data = doc.data();
+          
+          const task = {
+            id: doc.id,
+            title: data.title,
+            description: data.description,
+            category: data.category,
+            dueDate: data.dueDate ? data.dueDate.toDate() : null,
+            reminderDate: data.reminderDate ? data.reminderDate.toDate() : null,
+            status: data.status,
+            createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
+          };
+          
+          tasksList.push(task);
+        });
+        
+        setTasks(tasksList);
+        setLoading(false);
+      }, error => {
+        if (auth().currentUser) {
+          console.error("Error fetching tasks: ", error);
+        }
+        setLoading(false);
+      });
+    } catch (error) {
+      console.error("Error setting up tasks listener: ", error);
+      setLoading(false);
+      return null;
+    }
   };
 
+  const addTask = async (newTask) => {
+    const tasksRef = getTasksRef();
+    
+    if (!tasksRef) return;
+    
+    try {
+      const taskToAdd = {
+        ...newTask,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+      };
+      
+      if (taskToAdd.id) {
+        delete taskToAdd.id;
+      }
+      
+      await tasksRef.add(taskToAdd);
+    } catch (error) {
+      console.error("Error adding task: ", error);
+    }
+  };
+
+  const toggleTaskStatus = async (id) => {
+    const tasksRef = getTasksRef();
+    
+    if (!tasksRef) return;
+    
+    try {
+      const taskDoc = await tasksRef.doc(id).get();
+      if (taskDoc.exists) {
+        const currentStatus = taskDoc.data().status;
+        const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
+        
+        await tasksRef.doc(id).update({
+          status: newStatus,
+          updatedAt: firestore.FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling task status: ", error);
+    }
+  };
+
+  const deleteTask = async (id) => {
+    const tasksRef = getTasksRef();
+    
+    if (!tasksRef) return;
+    
+    try {
+      await tasksRef.doc(id).delete();
+    } catch (error) {
+      console.error("Error deleting task: ", error);
+    }
+  };
+
+  const updateTask = async (id, updatedData) => {
+    const tasksRef = getTasksRef();
+    
+    if (!tasksRef) return;
+    
+    try {
+      await tasksRef.doc(id).update({
+        ...updatedData,
+        updatedAt: firestore.FieldValue.serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Error updating task: ", error);
+    }
+  };
 
   return (
-    <TaskContext.Provider value={{ tasks, addTask, toggleTaskStatus, deleteTask }}>
+    <TaskContext.Provider value={{ 
+      tasks, 
+      addTask, 
+      toggleTaskStatus, 
+      deleteTask, 
+      updateTask,
+      loading 
+    }}>
       {children}
     </TaskContext.Provider>
   );

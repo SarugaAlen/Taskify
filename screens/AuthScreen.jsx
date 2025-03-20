@@ -1,24 +1,42 @@
-import React, { useState } from 'react';
-import { View, TextInput, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, {useState} from 'react';
+import {
+  View,
+  TextInput,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
 import auth from '@react-native-firebase/auth';
 
-const AuthScreen = ({ navigation }) => {
+const AuthScreen = ({navigation}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [user, setUser] = useState(null);
 
   const signIn = async () => {
     try {
-      const userCredential = await auth().signInWithEmailAndPassword(email, password);
+      const userCredential = await auth().signInWithEmailAndPassword(
+        email,
+        password,
+      );
       setUser(userCredential.user);
     } catch (error) {
-      console.log(error.message);
+      console.log('Firebase Auth Error Code:', error.code);
+      console.log('Firebase Auth Error Message:', error.message);
+    
+      let errorMessage = 'Napaka pri prijavi. Poskusite ponovno.';
+    
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+        errorMessage = 'Napačen email ali geslo. Poskusite ponovno.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Neveljaven email naslov.';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Preveč poskusov prijave. Poskusite kasneje.';
+      }
+    
+      Alert.alert('Napaka pri prijavi', errorMessage);
     }
-  };
-
-  const signOut = async () => {
-    await auth().signOut();
-    setUser(null);
   };
 
   return (
@@ -43,11 +61,9 @@ const AuthScreen = ({ navigation }) => {
         <Text style={styles.buttonText}>Prijava</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={signOut}>
-        <Text style={styles.buttonText}>Odjava</Text>
-      </TouchableOpacity>
-
-      {user && <Text style={styles.welcomeText}>Dobrodošli, {user.email}!</Text>}
+      {user && (
+        <Text style={styles.welcomeText}>Dobrodošli, {user.email}!</Text>
+      )}
     </View>
   );
 };

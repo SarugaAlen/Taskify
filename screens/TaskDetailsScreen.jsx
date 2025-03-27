@@ -8,7 +8,7 @@ import {
   Alert 
 } from 'react-native';
 
-import { TaskContext } from '../TaskContext'; 
+import { TaskContext } from '../utils/TaskContext'; 
 
 const TaskDetailsScreen = ({ route, navigation }) => {
   const { task } = route.params;

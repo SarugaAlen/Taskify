@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
-import { TaskContext } from '../TaskContext'; 
+import { TaskContext } from '../utils/TaskContext'; 
 
 
 const TaskListScreen = ({ navigation }) => {

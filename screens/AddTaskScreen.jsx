@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { TaskContext } from '../TaskContext'; 
+import { TaskContext } from '../utils/TaskContext'; 
 
 
 const AddTaskScreen = ({navigation}) => {
@@ -214,6 +214,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+    paddingBottom: 100,
   },
   formContainer: {
     backgroundColor: 'white',
